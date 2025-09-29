@@ -18,7 +18,7 @@ h2 { margin: 0; }
 #intro {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: url('https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif') center/cover no-repeat;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,28 +29,29 @@ h2 { margin: 0; }
 
 .intro-content {
   text-align: center;
-  background: rgba(0,0,0,0.6);
-  padding: 20px;
-  border-radius: 10px;
+  animation: fadeIn 2s ease forwards;
 }
 
 .intro-title {
   font-size: 2.5rem;
   font-weight: bold;
   margin: 0;
+  animation: glow 1.5s infinite alternate;
 }
 
 .intro-subtitle {
   font-size: 1.2rem;
   margin-top: 10px;
   color: #9ca3af;
+  animation: pulse 2s infinite;
 }
 
 .hidden { display: none; }
 
-@keyframes fadeOut {
-  to { opacity: 0; visibility: hidden; }
-}
+@keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes glow { from { text-shadow: 0 0 5px #3b82f6; } to { text-shadow: 0 0 20px #60a5fa; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
 /* الحقول الأساسية */
 .form-section {
@@ -75,11 +76,7 @@ h2 { margin: 0; }
   color: #fff;
 }
 
-.error {
-  color: #f87171;
-  font-size: 0.9rem;
-  margin-top: 4px;
-}
+.error { color: #f87171; font-size: 0.9rem; margin-top: 4px; }
 
 /* رفع الصور */
 .upload {
@@ -90,15 +87,14 @@ h2 { margin: 0; }
   width: 90%;
   max-width: 600px;
 }
-
-.upload input { margin-top: 10px; }
+.progress { margin-top: 10px; color: #facc15; font-weight: bold; }
 
 /* الجدول */
 .results table {
   margin: 20px auto;
   border-collapse: collapse;
   width: 95%;
-  max-width: 900px;
+  max-width: 700px;
 }
 
 .results th, .results td {
@@ -107,9 +103,11 @@ h2 { margin: 0; }
   text-align: center;
 }
 
+.results tr:nth-child(even) { background: #1e293b; }
+
 button {
   margin: 5px;
-  padding: 8px 14px;
+  padding: 6px 12px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -145,4 +143,5 @@ button {
 /* Responsive */
 @media (max-width: 768px) {
   .results table, .output { font-size: 14px; }
+  .results table { display: block; overflow-x: auto; }
 }

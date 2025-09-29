@@ -1,11 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const intro = document.getElementById("intro");
   const main = document.getElementById("main");
-
-  setTimeout(() => {
-    intro.style.display = "none";
-    main.classList.remove("hidden");
-  }, 6000);
+  setTimeout(() => { intro.style.display = "none"; main.classList.remove("hidden"); }, 5000);
 
   const opsName = document.getElementById("opsName");
   const opsCode = document.getElementById("opsCode");
@@ -15,39 +11,59 @@ document.addEventListener("DOMContentLoaded", () => {
   const deputyError = document.getElementById("deputyError");
 
   const fileInput = document.getElementById("fileInput");
+  const dropzone = document.getElementById("dropzone");
+  const progress = document.getElementById("progress");
   const dataTable = document.getElementById("dataTable").querySelector("tbody");
   const finalOutput = document.getElementById("finalOutput");
   const copyBtn = document.getElementById("copyBtn");
   const copyAlert = document.getElementById("copyAlert");
   const addRowBtn = document.getElementById("addRow");
 
-  const statusOptions = ["في الخدمة", "مشغول", "خارج الخدمة", "مشتركة", "سبيد يونت", "دباب"];
-  const locationOptions = ["الشمال", "الجنوب", "الشرق", "الوسط", "الغرب", "ساندي", "بوليتو"];
-
-  // OCR: رفع صورة
-  fileInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  // OCR: رفع صورة أو لصق
+  async function handleImage(file) {
+    progress.classList.remove("hidden");
+    let count = 3;
+    const interval = setInterval(() => {
+      progress.textContent = `جارِ المعالجة (${count})`;
+      count--;
+      if (count < 0) clearInterval(interval);
+    }, 1000);
     const { data: { text } } = await Tesseract.recognize(file, 'ara+eng');
+    clearInterval(interval);
+    progress.classList.add("hidden");
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     lines.forEach(line => {
-      line = line.replace(/[^\u0600-\u06FFa-zA-Z0-9\s]/g, ''); // تنظيف الرموز
-      let name = line.replace(/[0-9]/g, '').trim();
-      let code = line.replace(/[^0-9]/g, '').trim();
-      const row = createRow(name || "اسم", code || "كود", "في الخدمة", "الشمال");
-      dataTable.appendChild(row);
+      line = line.replace(/[^\u0600-\u06FFa-zA-Z0-9\s\+]/g, ''); // تنظيف الرموز
+      let busy = line.includes("مشغول");
+      line = line.replace("مشغول", "").trim();
+      let parts = line.split("+").map(p => p.trim()).filter(Boolean);
+      if (parts.length > 1) {
+        const row = createRow(parts.join(" + "), busy);
+        dataTable.appendChild(row);
+      } else {
+        const name = line.replace(/[0-9]/g, '').trim();
+        const code = line.replace(/[^0-9]/g, '').trim();
+        const row = createRow(`${name} ${code}`, busy);
+        dataTable.appendChild(row);
+      }
     });
     updateFinalOutput();
+  }
+
+  fileInput.addEventListener("change", (e) => { if (e.target.files[0]) handleImage(e.target.files[0]); });
+  dropzone.addEventListener("paste", (e) => {
+    const items = e.clipboardData.items;
+    for (let item of items) {
+      if (item.type.startsWith("image/")) handleImage(item.getAsFile());
+    }
   });
 
   // إنشاء صف جديد
-  function createRow(name, code, status, location) {
+  function createRow(text, busy=false) {
+    if (busy) text += " (مشغول)";
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${name}</td>
-      <td>${code}</td>
-      <td>${status}</td>
-      <td>${location}</td>
+      <td colspan="2">${text}</td>
       <td>
         <button class="btn-edit" onclick="editRow(this)">✏️ تعديل</button>
         <button class="btn-delete" onclick="deleteRow(this)">🗑️ حذف</button>
@@ -55,9 +71,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return row;
   }
 
-  // إضافة سطر يدوي
   addRowBtn.addEventListener("click", () => {
-    const row = createRow("اسم", "كود", "في الخدمة", "الشمال");
+    const row = createRow("اسم كود");
     dataTable.appendChild(row);
     updateFinalOutput();
   });
@@ -66,53 +81,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateFinalOutput() {
     opsError.textContent = "";
     deputyError.textContent = "";
-    if (!opsName.value.trim()) {
-      opsError.textContent = "الرجاء كتابة اسم العمليات";
-      return;
-    }
-    if (!deputyName.value.trim()) {
-      deputyError.textContent = "الرجاء كتابة اسم النائب";
-      return;
-    }
+    if (!opsName.value.trim()) { opsError.textContent = "الرجاء كتابة اسم العمليات"; return; }
+    if (!deputyName.value.trim()) { deputyError.textContent = "الرجاء كتابة اسم النائب"; return; }
 
     let result = "📌 استلام العمليات 📌\n\n";
     result += `اسم العمليات : ${opsName.value} ${opsCode.value}\n`;
     result += `النائب : ${deputyName.value} ${deputyCode.value}\n\n`;
 
-    let rows = [...dataTable.rows].map(r => ({
-      name: r.cells[0].innerText,
-      code: r.cells[1].innerText,
-      status: r.cells[2].innerText,
-      location: r.cells[3].innerText
-    }));
-
-    let inField = rows.filter(r => r.status.includes("في الخدمة"));
-    let busy = rows.filter(r => r.status.includes("مشغول"));
-    let off = rows.filter(r => r.status.includes("خارج الخدمة"));
-    let shared = rows.filter(r => r.status.includes("مشتركة"));
-    let speed = rows.filter(r => r.status.includes("سبيد"));
-    let bikes = rows.filter(r => r.status.includes("دباب"));
-
-    result += `عدد واسماء الوحدات في الميدان [${inField.length + busy.length}]\n\n`;
-    inField.forEach(r => { result += `${r.name} ${r.code} - ${r.location} - ${r.status}\n`; });
-    busy.forEach(r => { result += `${r.name} ${r.code} - ${r.location} - ${r.status}\n`; });
-
-    if (shared.length) {
-      result += "\nوحدات مشتركة\n";
-      shared.forEach(r => { result += `${r.name} ${r.code} - ${r.location}\n`; });
-    }
-    if (speed.length) {
-      result += "\nوحدات سبيد يونت\n";
-      speed.forEach(r => { result += `${r.name} ${r.code} - ${r.location}\n`; });
-    }
-    if (bikes.length) {
-      result += "\nوحدات دباب\n";
-      bikes.forEach(r => { result += `${r.name} ${r.code} - ${r.location}\n`; });
-    }
-    if (off.length) {
-      result += `\nخارج الخدمة [${off.length}]\n`;
-      off.forEach(r => { result += `${r.name} ${r.code} - ${r.location}\n`; });
-    }
+    let rows = [...dataTable.rows].map(r => r.cells[0].innerText);
+    result += `عدد واسماء الوحدات في الميدان [${rows.length}]\n\n`;
+    rows.forEach(r => { result += r + "\n"; });
 
     finalOutput.innerText = result;
   }
@@ -128,17 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // تعديل / حفظ / حذف
   window.editRow = function(btn) {
     const row = btn.parentElement.parentElement;
-    for (let i = 0; i < 4; i++) {
-      const cell = row.cells[i];
-      const value = cell.innerText;
-      if (i === 2) {
-        cell.innerHTML = `<select>${statusOptions.map(opt => `<option ${opt===value?'selected':''}>${opt}</option>`).join("")}</select>`;
-      } else if (i === 3) {
-        cell.innerHTML = `<select>${locationOptions.map(opt => `<option ${opt===value?'selected':''}>${opt}</option>`).join("")}</select>`;
-      } else {
-        cell.innerHTML = `<input type="text" value="${value}">`;
-      }
-    }
+    const value = row.cells[0].innerText;
+    row.cells[0].innerHTML = `<input type="text" value="${value}" style="width:90%">`;
     btn.textContent = "✔️ حفظ";
     btn.className = "btn-save";
     btn.onclick = () => saveRow(btn);
@@ -146,15 +115,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.saveRow = function(btn) {
     const row = btn.parentElement.parentElement;
-    for (let i = 0; i < 4; i++) {
-      if (i === 2 || i === 3) {
-        const select = row.cells[i].querySelector("select");
-        row.cells[i].innerText = select.value;
-      } else {
-        const input = row.cells[i].querySelector("input");
-        row.cells[i].innerText = input.value;
-      }
-    }
+    const input = row.cells[0].querySelector("input");
+    row.cells[0].innerText = input.value;
     btn.textContent = "✏️ تعديل";
     btn.className = "btn-edit";
     btn.onclick = () => editRow(btn);
@@ -166,7 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateFinalOutput();
   }
 
-  // تحديث النتيجة النهائية مباشرة
   opsName.addEventListener("input", updateFinalOutput);
   opsCode.addEventListener("input", updateFinalOutput);
   deputyName.addEventListener("input", updateFinalOutput);

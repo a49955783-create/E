@@ -10,7 +10,7 @@
   <!-- Intro -->
   <div id="intro">
     <div class="intro-content">
-      <h1 class="intro-title">شرطة ريسبكت</h1>
+      <h1 class="intro-title">🚓 شرطة ريسبكت 🚓</h1>
       <p class="intro-subtitle">تحديث مركز العمليات</p>
     </div>
   </div>
@@ -39,16 +39,17 @@
     </section>
 
     <!-- رفع الصور -->
-    <section class="upload">
+    <section class="upload" id="dropzone">
       <p>اسحب وأفلت صورة هنا، أو الصقها بـ <b>Ctrl+V</b></p>
       <input type="file" id="fileInput" accept="image/*">
+      <div id="progress" class="progress hidden">جارِ المعالجة (3)</div>
     </section>
 
     <!-- الجدول -->
     <section class="results">
       <table id="dataTable">
         <thead>
-          <tr><th>الاسم</th><th>الكود</th><th>الحالة</th><th>الموقع</th><th>إجراءات</th></tr>
+          <tr><th>الاسم</th><th>الكود</th><th>إجراءات</th></tr>
         </thead>
         <tbody></tbody>
       </table>
