@@ -1,0 +1,148 @@
+body {
+  margin: 0;
+  font-family: 'Tajawal', sans-serif;
+  background: #0d1117;
+  color: #fff;
+  text-align: center;
+}
+
+header {
+  padding: 1rem;
+  background: #111827;
+  margin-bottom: 1rem;
+}
+
+h2 { margin: 0; }
+
+/* Intro */
+#intro {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url('https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif') center/cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeOut 4s ease forwards;
+  animation-delay: 3s;
+}
+
+.intro-content {
+  text-align: center;
+  background: rgba(0,0,0,0.6);
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.intro-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.intro-subtitle {
+  font-size: 1.2rem;
+  margin-top: 10px;
+  color: #9ca3af;
+}
+
+.hidden { display: none; }
+
+@keyframes fadeOut {
+  to { opacity: 0; visibility: hidden; }
+}
+
+/* الحقول الأساسية */
+.form-section {
+  margin: 20px auto;
+  width: 90%;
+  max-width: 500px;
+  text-align: right;
+}
+
+.form-section label {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.form-section input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  background: #1f2937;
+  color: #fff;
+}
+
+.error {
+  color: #f87171;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+/* رفع الصور */
+.upload {
+  margin: 20px auto;
+  padding: 20px;
+  border: 2px dashed #6b7280;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 600px;
+}
+
+.upload input { margin-top: 10px; }
+
+/* الجدول */
+.results table {
+  margin: 20px auto;
+  border-collapse: collapse;
+  width: 95%;
+  max-width: 900px;
+}
+
+.results th, .results td {
+  border: 1px solid #6b7280;
+  padding: 8px;
+  text-align: center;
+}
+
+button {
+  margin: 5px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-edit { background: #facc15; color: #000; }
+.btn-save { background: #22c55e; color: #fff; }
+.btn-delete { background: #ef4444; color: #fff; }
+.btn-main { background: #2563eb; color: #fff; }
+
+.copy-alert {
+  margin: 10px auto;
+  padding: 10px;
+  background: #1d4ed8;
+  color: #fff;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+/* النتيجة */
+.output {
+  margin: 20px auto;
+  padding: 15px;
+  border: 1px solid #6b7280;
+  width: 90%;
+  max-width: 600px;
+  text-align: right;
+  background: #1f2937;
+  border-radius: 10px;
+  white-space: pre-line;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .results table, .output { font-size: 14px; }
+}
