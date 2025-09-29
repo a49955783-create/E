@@ -33,19 +33,9 @@ document.addEventListener("DOMContentLoaded", () => {
     progress.classList.add("hidden");
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     lines.forEach(line => {
-      line = line.replace(/[^\u0600-\u06FFa-zA-Z0-9\s\+]/g, ''); // تنظيف الرموز
-      let busy = line.includes("مشغول");
-      line = line.replace("مشغول", "").trim();
-      let parts = line.split("+").map(p => p.trim()).filter(Boolean);
-      if (parts.length > 1) {
-        const row = createRow(parts.join(" + "), busy);
-        dataTable.appendChild(row);
-      } else {
-        const name = line.replace(/[0-9]/g, '').trim();
-        const code = line.replace(/[^0-9]/g, '').trim();
-        const row = createRow(`${name} ${code}`, busy);
-        dataTable.appendChild(row);
-      }
+      line = line.replace(/[^\u0600-\u06FFa-zA-Z0-9\s\+]/g, '');
+      const row = createRow(line, "", "في الخدمة", "لا شيء");
+      dataTable.appendChild(row);
     });
     updateFinalOutput();
   }
@@ -59,11 +49,33 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // إنشاء صف جديد
-  function createRow(text, busy=false) {
-    if (busy) text += " (مشغول)";
+  function createRow(name, code, state="في الخدمة", location="لا شيء") {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td colspan="2">${text}</td>
+      <td>${name}</td>
+      <td>${code}</td>
+      <td>
+        <select>
+          <option ${state==="في الخدمة"?"selected":""}>في الخدمة</option>
+          <option ${state==="مشغول"?"selected":""}>مشغول</option>
+          <option ${state==="مشتركة"?"selected":""}>مشتركة</option>
+          <option ${state==="سبيد يونت"?"selected":""}>سبيد يونت</option>
+          <option ${state==="دباب"?"selected":""}>دباب</option>
+          <option ${state==="خارج الخدمة"?"selected":""}>خارج الخدمة</option>
+        </select>
+      </td>
+      <td>
+        <select>
+          <option ${location==="لا شيء"?"selected":""}>لا شيء</option>
+          <option>الشمال</option>
+          <option>الجنوب</option>
+          <option>الشرق</option>
+          <option>الغرب</option>
+          <option>وسط</option>
+          <option>ساندي</option>
+          <option>بوليتو</option>
+        </select>
+      </td>
       <td>
         <button class="btn-edit" onclick="editRow(this)">✏️ تعديل</button>
         <button class="btn-delete" onclick="deleteRow(this)">🗑️ حذف</button>
@@ -72,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   addRowBtn.addEventListener("click", () => {
-    const row = createRow("اسم كود");
+    const row = createRow("اسم", "كود");
     dataTable.appendChild(row);
     updateFinalOutput();
   });
@@ -88,9 +100,35 @@ document.addEventListener("DOMContentLoaded", () => {
     result += `اسم العمليات : ${opsName.value} ${opsCode.value}\n`;
     result += `النائب : ${deputyName.value} ${deputyCode.value}\n\n`;
 
-    let rows = [...dataTable.rows].map(r => r.cells[0].innerText);
-    result += `عدد واسماء الوحدات في الميدان [${rows.length}]\n\n`;
-    rows.forEach(r => { result += r + "\n"; });
+    let rows = [...dataTable.rows].map(r => ({
+      name: r.cells[0].innerText,
+      code: r.cells[1].innerText,
+      state: r.cells[2].querySelector("select").value
+    }));
+
+    const sections = {
+      "في الخدمة": "🚓 في الخدمة",
+      "مشغول": "⏳ مشغول",
+      "مشتركة": "🔗 وحدات مشتركة",
+      "سبيد يونت": "⚡ وحدات سبيد يونت",
+      "دباب": "🏍️ وحدات دباب",
+      "خارج الخدمة": "❌ خارج الخدمة"
+    };
+
+    Object.keys(sections).forEach(state => {
+      const filtered = rows.filter(r => r.state === state);
+      if (state === "خارج الخدمة") {
+        result += `\n${sections[state]} [${filtered.length}]\n`;
+        if (filtered.length) {
+          filtered.forEach(r => result += `${r.name} ${r.code}\n`);
+        } else {
+          result += "(0)\n";
+        }
+      } else if (filtered.length) {
+        result += `\n${sections[state]} [${filtered.length}]\n`;
+        filtered.forEach(r => result += `${r.name} ${r.code}\n`);
+      }
+    });
 
     finalOutput.innerText = result;
   }
@@ -106,8 +144,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // تعديل / حفظ / حذف
   window.editRow = function(btn) {
     const row = btn.parentElement.parentElement;
-    const value = row.cells[0].innerText;
-    row.cells[0].innerHTML = `<input type="text" value="${value}" style="width:90%">`;
+    for (let i = 0; i < 2; i++) {
+      const cell = row.cells[i];
+      const value = cell.innerText;
+      cell.innerHTML = `<input type="text" value="${value}">`;
+    }
     btn.textContent = "✔️ حفظ";
     btn.className = "btn-save";
     btn.onclick = () => saveRow(btn);
@@ -115,8 +156,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.saveRow = function(btn) {
     const row = btn.parentElement.parentElement;
-    const input = row.cells[0].querySelector("input");
-    row.cells[0].innerText = input.value;
+    for (let i = 0; i < 2; i++) {
+      const input = row.cells[i].querySelector("input");
+      row.cells[i].innerText = input.value;
+    }
     btn.textContent = "✏️ تعديل";
     btn.className = "btn-edit";
     btn.onclick = () => editRow(btn);
@@ -132,4 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
   opsCode.addEventListener("input", updateFinalOutput);
   deputyName.addEventListener("input", updateFinalOutput);
   deputyCode.addEventListener("input", updateFinalOutput);
+
+  // مؤشر الليزر
+  const cursor = document.getElementById("cursor");
+  document.addEventListener("mousemove", (e) => {
+    cursor.style.left = e.pageX + "px";
+    cursor.style.top = e.pageY + "px";
+  });
 });
